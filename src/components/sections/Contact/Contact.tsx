@@ -7,7 +7,7 @@ import { instagramUrl } from "@/lib/siteConfig";
 import styles from "./contact.module.scss";
 
 // Flip to true once the Resend API key is set up (see /api/contact).
-const FORM_ENABLED = false;
+const FORM_ENABLED = true;
 
 type Status = "idle" | "sending" | "sent" | "error";
 

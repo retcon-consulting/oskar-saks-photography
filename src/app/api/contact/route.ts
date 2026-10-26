@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { Resend } from "resend";
 import { contactSchema } from "@/lib/contactValidation";
+import { renderContactEmail } from "@/lib/contactEmail";
 import { contactTopics } from "@/lib/contentSchema";
 import { getContactContent, getServicesContent } from "@/lib/siteContent";
 import { SITE_NAME } from "@/lib/siteConfig";
@@ -51,23 +52,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "We could not send your message. Please try again later." }, { status: 500 });
   }
 
+  const { html, text, senderName } = renderContactEmail({ name, email, phone, topicLabel, date, message });
   const resend = new Resend(apiKey);
   const { error } = await resend.emails.send({
     from,
     to,
     replyTo: email,
-    subject: `${SITE_NAME}: ${topicLabel} inquiry from ${name}`,
-    text: [
-      `Name: ${name}`,
-      `Email: ${email}`,
-      phone ? `Phone: ${phone}` : null,
-      `Interested in: ${topicLabel}`,
-      date ? `Date / timing: ${date}` : null,
-      "",
-      message,
-    ]
-      .filter((line): line is string => line !== null)
-      .join("\n"),
+    subject: `${SITE_NAME}: ${topicLabel} inquiry from ${senderName}`,
+    text,
+    html,
   });
 
   if (error) {
