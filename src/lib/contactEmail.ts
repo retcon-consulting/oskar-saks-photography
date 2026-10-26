@@ -13,6 +13,13 @@ type ContactEmailInput = {
 // The sender's name goes into the subject, so it can't carry line breaks.
 export const toSingleLine = (value: string) => value.replace(/\s+/g, " ").trim();
 
+// "2026-12-06" -> "Sunday, December 6, 2026". Read as UTC so the day never shifts with the server's time zone.
+function formatDate(value: string): string {
+  const parsed = new Date(`${value}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime())) return value;
+  return parsed.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric", timeZone: "UTC" });
+}
+
 function detailRow(label: string, valueHtml: string): string {
   return `<tr>
 <td valign="top" style="padding:10px 16px 10px 0;width:120px;border-bottom:1px solid ${EMAIL_COLORS.line};font-family:${FONT_MONO};font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:${EMAIL_COLORS.inkSoft};">${label}</td>
@@ -30,7 +37,7 @@ export function renderContactEmail({ name, email, phone, topicLabel, date, messa
     detailRow("Email", link(`mailto:${encodeURIComponent(email)}`, email)),
     phone ? detailRow("Phone", link(`tel:${phone.replace(/[^\d+]/g, "")}`, phone)) : "",
     detailRow("Interested in", escapeHtml(topicLabel)),
-    date ? detailRow("Date / timing", escapeHtml(date)) : "",
+    date ? detailRow("Preferred date", escapeHtml(formatDate(date))) : "",
   ].join("\n");
 
   const bodyHtml = `<h1 style="margin:0 0 6px;font-family:${FONT_DISPLAY};font-size:24px;line-height:1.2;font-weight:normal;color:${EMAIL_COLORS.ink};">${escapeHtml(senderName)} sent you a message</h1>
@@ -56,7 +63,7 @@ ${renderButton(`Reply to ${firstName}`, `mailto:${encodeURIComponent(email)}?sub
     `Email: ${email}`,
     phone ? `Phone: ${phone}` : null,
     `Interested in: ${topicLabel}`,
-    date ? `Date / timing: ${date}` : null,
+    date ? `Preferred date: ${formatDate(date)}` : null,
     "",
     message,
   ]

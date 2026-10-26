@@ -13,7 +13,12 @@ export const contactSchema = z.object({
     .optional(),
   // Topics follow the editable services list, so the route checks membership against the current one.
   topic: z.string().trim().min(1).max(60),
-  date: z.string().trim().max(60).optional(),
+  // A day picked in the form's date field (YYYY-MM-DD), or nothing.
+  date: z
+    .string()
+    .trim()
+    .regex(/^(\d{4}-\d{2}-\d{2})?$/, "Please pick a valid date.")
+    .optional(),
   message: z.string().trim().min(10, "Tell Oskar a little more (10+ characters).").max(4000),
 });
 

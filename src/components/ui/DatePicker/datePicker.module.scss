@@ -1,0 +1,146 @@
+// The input takes its look from the form field it sits in; only the cursor needs saying here.
+.input {
+	cursor: pointer;
+}
+
+// flatpickr's own stylesheet is loaded first; these overrides give the calendar the site's palette, radii and type.
+.calendar:global(.flatpickr-calendar) {
+	width: min(19.5rem, calc(100vw - 2rem));
+	padding-bottom: 0.5rem;
+	font-family: inherit;
+	background: var(--color-surface);
+	border: 1px solid var(--color-line-strong);
+	border-radius: var(--radius-md);
+	box-shadow: var(--shadow-lift);
+	overflow: hidden;
+
+	&::before,
+	&::after {
+		display: none;
+	}
+
+	:global(.flatpickr-months) {
+		background: var(--gradient-accent);
+		padding-block: 0.35rem;
+	}
+
+	:global(.flatpickr-month),
+	:global(.flatpickr-current-month),
+	:global(.flatpickr-monthDropdown-months),
+	:global(.cur-month),
+	:global(input.cur-year) {
+		color: #fff;
+		fill: #fff;
+	}
+
+	:global(.flatpickr-current-month) {
+		font-family: var(--font-display);
+		font-size: 1.05rem;
+		font-weight: 400;
+	}
+
+	:global(.cur-month),
+	:global(input.cur-year) {
+		font-weight: 400;
+	}
+
+	:global(.flatpickr-prev-month),
+	:global(.flatpickr-next-month) {
+		color: #fff;
+		fill: #fff;
+		padding: 0.6rem 0.9rem;
+
+		svg {
+			fill: #fff;
+		}
+
+		&:hover svg {
+			fill: var(--color-accent-soft);
+		}
+	}
+
+	:global(.flatpickr-weekdays) {
+		height: 2.25rem;
+		background: transparent;
+	}
+
+	:global(span.flatpickr-weekday) {
+		font-family: var(--font-mono);
+		font-size: 0.65rem;
+		font-weight: 400;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-text-dim);
+	}
+
+	:global(.flatpickr-days),
+	:global(.dayContainer) {
+		width: 100%;
+		min-width: 100%;
+		max-width: 100%;
+	}
+
+	:global(.dayContainer) {
+		padding: 0 0.4rem;
+		justify-content: space-around;
+	}
+
+	:global(.flatpickr-day) {
+		max-width: 2.4rem;
+		height: 2.4rem;
+		line-height: 2.2rem;
+		color: var(--color-text);
+		border: 1px solid transparent;
+		border-radius: var(--radius-sm);
+		transition:
+			background-color 0.2s ease,
+			border-color 0.2s ease;
+
+		&:hover,
+		&:focus {
+			background: var(--color-accent-soft);
+			border-color: var(--color-accent-soft);
+		}
+
+		&:global(.today) {
+			border-color: var(--color-accent);
+		}
+
+		&:global(.selected),
+		&:global(.selected:hover) {
+			color: #fff;
+			background: var(--gradient-accent);
+			border-color: transparent;
+		}
+
+		&:global(.prevMonthDay),
+		&:global(.nextMonthDay) {
+			color: color-mix(in srgb, var(--color-text-dim) 55%, transparent);
+		}
+
+		&:global(.flatpickr-disabled),
+		&:global(.flatpickr-disabled:hover) {
+			color: color-mix(in srgb, var(--color-text-dim) 40%, transparent);
+			background: transparent;
+			border-color: transparent;
+			cursor: not-allowed;
+		}
+	}
+}
+
+.clear {
+	display: block;
+	margin: 0.4rem auto 0;
+	padding: 0.5rem 1rem;
+	font-family: var(--font-mono);
+	font-size: 0.65rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--color-text-dim);
+	cursor: pointer;
+	transition: color 0.2s ease;
+
+	&:hover {
+		color: var(--color-accent);
+	}
+}

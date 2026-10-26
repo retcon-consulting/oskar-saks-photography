@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type ReactNode } from "react";
+import DatePicker from "@/components/ui/DatePicker/DatePicker";
 import Reveal from "@/components/ui/Reveal/Reveal";
 import { CONTACT_PREFILL_EVENT, type ContactPrefill } from "@/lib/contactPrefill";
 import { instagramUrl } from "@/lib/siteConfig";
@@ -22,6 +23,12 @@ export default function Contact({ topics, content }: ContactProps) {
   const [form, setForm] = useState(emptyForm);
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState("");
+  // When the form appeared; sent along so the server can tell a person from a script that posts instantly.
+  const openedAt = useRef(0);
+
+  useEffect(() => {
+    openedAt.current = Date.now();
+  }, []);
 
   useEffect(() => {
     const onPrefill = (event: Event) => {
@@ -50,7 +57,7 @@ export default function Contact({ topics, content }: ContactProps) {
       const response = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, startedAt: openedAt.current }),
       });
       if (!response.ok) {
         const data = (await response.json().catch(() => null)) as { error?: string } | null;
@@ -179,17 +186,9 @@ export default function Contact({ topics, content }: ContactProps) {
                 </div>
                 <div className={styles.field}>
                   <label htmlFor="date">
-                    Date or timing <span>(optional)</span>
+                    Preferred date <span>(optional)</span>
                   </label>
-                  <input
-                    id="date"
-                    name="date"
-                    type="text"
-                    maxLength={60}
-                    placeholder="e.g. June 2027"
-                    value={form.date}
-                    onChange={handleChange}
-                  />
+                  <DatePicker id="date" name="date" value={form.date} onChange={(date) => setForm((current) => ({ ...current, date }))} />
                 </div>
               </div>
               <div className={styles.field}>
