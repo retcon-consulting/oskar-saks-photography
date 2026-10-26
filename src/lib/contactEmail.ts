@@ -30,11 +30,12 @@ function detailRow(label: string, valueHtml: string): string {
 export function renderContactEmail({ name, email, phone, topicLabel, date, message }: ContactEmailInput) {
   const senderName = toSingleLine(name);
   const firstName = senderName.split(" ")[0] || "them";
+  const mailtoAddress = encodeURIComponent(email).replace(/%40/g, "@");
   const link = (href: string, text: string) =>
     `<a href="${escapeHtml(href)}" style="color:${EMAIL_COLORS.accentDeep};text-decoration:none;">${escapeHtml(text)}</a>`;
 
   const rows = [
-    detailRow("Email", link(`mailto:${encodeURIComponent(email)}`, email)),
+    detailRow("Email", link(`mailto:${mailtoAddress}`, email)),
     phone ? detailRow("Phone", link(`tel:${phone.replace(/[^\d+]/g, "")}`, phone)) : "",
     detailRow("Interested in", escapeHtml(topicLabel)),
     date ? detailRow("Preferred date", escapeHtml(formatDate(date))) : "",
@@ -46,7 +47,7 @@ export function renderContactEmail({ name, email, phone, topicLabel, date, messa
 ${rows}
 </table>
 <div style="margin:0 0 24px;padding:18px 20px;background-color:${EMAIL_COLORS.panel};border-left:3px solid ${EMAIL_COLORS.accent};border-radius:6px;font-family:${FONT_BODY};font-size:16px;line-height:1.65;color:${EMAIL_COLORS.ink};white-space:pre-wrap;">${escapeHtml(message)}</div>
-${renderButton(`Reply to ${firstName}`, `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(`Re: ${topicLabel}`)}`)}`;
+${renderButton(`Reply to ${firstName}`, `mailto:${mailtoAddress}?subject=${encodeURIComponent(`Re: ${topicLabel}`)}`)}`;
 
   const footerHtml = `Sent from the contact form at ${escapeHtml(SITE_NAME)}. Replying to this email goes straight to ${escapeHtml(email)}.`;
 
