@@ -1,4 +1,4 @@
-import { getSiteUrl, instagramUrl, PHOTOGRAPHER, SITE_DESCRIPTION, SITE_NAME } from "@/lib/siteConfig";
+import { getSiteUrl, PHOTOGRAPHER, SITE_DESCRIPTION, SITE_NAME } from "@/lib/siteConfig";
 import { getContactContent } from "@/lib/siteContent";
 
 // Structured data that tells search engines this is a local photography business, with the contact details edited in the admin.
@@ -18,7 +18,7 @@ export default async function SiteJsonLd() {
     email: contact.email,
     address: { "@type": "PostalAddress", addressLocality: contact.location, addressRegion: "CO", addressCountry: "US" },
     areaServed: { "@type": "State", name: "Colorado" },
-    sameAs: [instagramUrl(contact.instagram)],
+    // sameAs: [instagramUrl(contact.instagram)],
   };
   // "<" is escaped so nothing in the data (it includes admin-edited text) can close the script tag.
   return <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(data).replace(/</g, "\u003c") }} />;

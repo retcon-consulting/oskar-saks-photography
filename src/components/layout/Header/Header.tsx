@@ -5,13 +5,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { useActiveSection } from "@/hooks/useActiveSection";
 import { CATEGORIES } from "@/data/photos";
-import { instagramUrl, NAV_LINKS, PHOTOGRAPHER } from "@/lib/siteConfig";
+// import { instagramUrl, NAV_LINKS, PHOTOGRAPHER } from "@/lib/siteConfig";
+import { NAV_LINKS, PHOTOGRAPHER } from "@/lib/siteConfig";
 import styles from "./header.module.scss";
 
 // How long scrolling must pause before the desktop header slides away.
 const IDLE_HIDE_MS = 2000;
 
-export default function Header({ instagram }: { instagram: string }) {
+// export default function Header({ instagram }: { instagram: string }) {
+export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   // Desktop only (see header.module.scss): the header slides away once scrolling has stopped for a few seconds.
@@ -198,9 +200,9 @@ export default function Header({ instagram }: { instagram: string }) {
             ))}
           </ul>
         </nav>
-        <a className={styles.overlayFoot} href={instagramUrl(instagram)} target="_blank" rel="noopener noreferrer">
+        {/* <a className={styles.overlayFoot} href={instagramUrl(instagram)} target="_blank" rel="noopener noreferrer">
           @{instagram}
-        </a>
+        </a> */}
       </div>
     </header>
   );

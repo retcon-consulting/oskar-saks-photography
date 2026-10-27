@@ -4,7 +4,7 @@ import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type Rea
 import DatePicker from "@/components/ui/DatePicker/DatePicker";
 import Reveal from "@/components/ui/Reveal/Reveal";
 import { CONTACT_PREFILL_EVENT, type ContactPrefill } from "@/lib/contactPrefill";
-import { instagramUrl } from "@/lib/siteConfig";
+// import { instagramUrl } from "@/lib/siteConfig";
 import styles from "./contact.module.scss";
 
 // Flip to true once the Resend API key is set up (see /api/contact).
@@ -98,14 +98,14 @@ export default function Contact({ topics, content }: ContactProps) {
                   </a>
                 </dd>
               </div>
-              <div>
+              {/* <div>
                 <dt>Instagram</dt>
                 <dd>
                   <a href={instagramUrl(content.instagram)} target="_blank" rel="noopener noreferrer" className={styles.link}>
                     @{content.instagram}
                   </a>
                 </dd>
-              </div>
+              </div> */}
               <div>
                 <dt>Based</dt>
                 <dd>{content.location}</dd>
