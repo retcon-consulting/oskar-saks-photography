@@ -29,7 +29,10 @@ export default async function Services({ preview = false }: ServicesProps) {
         )}
 
         <ol className={styles.list}>
-          {content.items.map((service, index) => (
+          {content.items.map((service, index) => {
+            const discounted = service.discountActive && service.discountPercent > 0 && service.discountName !== "";
+            const salePrice = Math.round(service.startingAt * (1 - service.discountPercent / 100));
+            return (
             <Reveal as="li" key={service.id} delay={60 * index} className={styles.row}>
               <span className={styles.index}>{String(index + 1).padStart(2, "0")}</span>
               <div className={styles.body}>
@@ -44,13 +47,29 @@ export default async function Services({ preview = false }: ServicesProps) {
                 )}
               </div>
               <div className={styles.side}>
-                <p className={styles.price}>
-                  <span>From</span>${service.startingAt.toLocaleString("en-US")}
-                </p>
+                <div className={styles.price}>
+                  <span className={styles.label}>From</span>
+                  {discounted ? (
+                    <>
+                      <span className={styles.amounts}>
+                        <s className={styles.was}>
+                          <span className="visually-hidden">Was </span>${service.startingAt.toLocaleString("en-US")}
+                        </s>
+                        <strong className={styles.now}>
+                          <span className="visually-hidden">Now </span>${salePrice.toLocaleString("en-US")}
+                        </strong>
+                      </span>
+                      <span className={styles.deal}>{service.discountName}</span>
+                    </>
+                  ) : (
+                    <>${service.startingAt.toLocaleString("en-US")}</>
+                  )}
+                </div>
                 <InquireButton topic={service.id} />
               </div>
             </Reveal>
-          ))}
+            );
+          })}
         </ol>
 
         {preview && (

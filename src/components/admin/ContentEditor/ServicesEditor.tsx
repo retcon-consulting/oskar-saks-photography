@@ -12,14 +12,28 @@ import { useSave } from "./useSave";
 import styles from "./contentEditor.module.scss";
 
 // Edited as strings, then parsed on save: the price input and the one-per-line list are both text until then.
-type Draft = { id: string; title: string; description: string; startingAt: string; includes: string };
+type Draft = {
+  id: string;
+  title: string;
+  description: string;
+  startingAt: string;
+  includes: string;
+  discountActive: boolean;
+  discountName: string;
+  discountPercent: string;
+};
 
 const MAX_SERVICES = 12;
 
 export default function ServicesEditor({ content }: { content: ServicesContent }) {
   const { pending, message, save } = useSave();
   const [items, setItems] = useState<Draft[]>(() =>
-    content.items.map((item) => ({ ...item, startingAt: String(item.startingAt), includes: item.includes.join("\n") })),
+    content.items.map((item) => ({
+      ...item,
+      startingAt: String(item.startingAt),
+      includes: item.includes.join("\n"),
+      discountPercent: String(item.discountPercent),
+    })),
   );
   const [open, setOpen] = useState<Set<string>>(() => new Set());
   const sensors = useSensors(
@@ -65,6 +79,9 @@ export default function ServicesEditor({ content }: { content: ServicesContent }
                 .split("\n")
                 .map((line) => line.trim())
                 .filter(Boolean),
+              discountActive: item.discountActive,
+              discountName: item.discountName,
+              discountPercent: Number(item.discountPercent),
             })),
           }),
         )
@@ -120,7 +137,16 @@ export default function ServicesEditor({ content }: { content: ServicesContent }
           disabled={items.length >= MAX_SERVICES}
           onClick={() => {
             const id = `s${crypto.randomUUID().replaceAll("-", "").slice(0, 10)}`;
-            setItems((current) => [...current, { id, title: "", description: "", startingAt: "0", includes: "" }]);
+            setItems((current) => [...current, {
+              id,
+              title: "",
+              description: "",
+              startingAt: "0",
+              includes: "",
+              discountActive: false,
+              discountName: "",
+              discountPercent: "0",
+            }]);
             setOpen((current) => new Set(current).add(id));
           }}
         >
@@ -213,6 +239,42 @@ function ServiceCard({ item, index, count, open, onToggle, onChange, onMove, onR
             </span>
             <textarea value={item.includes} onChange={(event) => onChange({ includes: event.target.value })} rows={4} />
           </label>
+          <label className={styles.check}>
+            {/* defaultChecked, not checked: React resets the form after a save, and that reset restores a checkbox to
+                its default, so a controlled `checked` snapped back to its first-render value and showed the opposite. */}
+            <input
+              type="checkbox"
+              defaultChecked={item.discountActive}
+              onChange={(event) => onChange({ discountActive: event.target.checked })}
+            />
+            <span>Active discount</span>
+          </label>
+          {item.discountActive && (
+            <div className={styles.row}>
+              <label>
+                <span>Discount Name</span>
+                <input
+                  value={item.discountName}
+                  onChange={(event) => onChange({ discountName: event.target.value })}
+                  maxLength={100}
+                  required
+                />
+              </label>
+              <label>
+                <span>Discount %</span>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  max={100}
+                  step={1}
+                  value={item.discountPercent}
+                  onChange={(event) => onChange({ discountPercent: event.target.value })}
+                  required
+                />
+              </label>
+            </div>
+          )}
           <div className={styles.tools}>
             <button type="button" className={styles.outline} disabled={index === 0} onClick={() => onMove(-1)} aria-label={`Move ${name} up`}>
               ↑

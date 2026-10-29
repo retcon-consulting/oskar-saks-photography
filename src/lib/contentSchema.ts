@@ -22,13 +22,26 @@ export const aboutSchema = z.object({
   intro: z.string().trim().min(1).max(2400),
 });
 
-export const serviceSchema = z.object({
-  id: z.string().min(1).max(40),
-  title: z.string().trim().min(1, "Every service needs a title").max(80),
-  description: z.string().trim().min(1, "Every service needs a description").max(600),
-  startingAt: z.number().int("Prices are whole dollars").min(0).max(1_000_000),
-  includes: z.array(z.string().trim().min(1).max(120)).max(10),
-});
+// The discount fields default so services saved before they existed still parse.
+export const serviceSchema = z
+  .object({
+    id: z.string().min(1).max(40),
+    title: z.string().trim().min(1, "Every service needs a title").max(80),
+    description: z.string().trim().min(1, "Every service needs a description").max(600),
+    startingAt: z.number().int("Prices are whole dollars").min(0).max(1_000_000),
+    includes: z.array(z.string().trim().min(1).max(120)).max(10),
+    discountActive: z.boolean().default(false),
+    discountName: z.string().trim().max(100).default(""),
+    discountPercent: z
+      .number("Discount % must be a number")
+      .min(0, "Discount % can't be below 0")
+      .max(100, "Discount % can't be above 100")
+      .default(0),
+  })
+  .refine((service) => !service.discountActive || service.discountName.length > 0, {
+    message: "Name the active discount",
+    path: ["discountName"],
+  });
 
 export const servicesSchema = z.object({
   title: title(80),
@@ -84,7 +97,7 @@ export const CONTENT = {
     defaults: {
       title: "Ways to *work together*",
       lede: "Every session is built around you. Here's what's included, with starting prices to help you plan. Reach out for a custom quote.",
-      items: SERVICES,
+      items: SERVICES.map((service) => ({ ...service, discountActive: false, discountName: "", discountPercent: 0 })),
     } satisfies ServicesContent,
   },
   contact: {
