@@ -20,8 +20,8 @@ export default function Home() {
 			<Hero />
 			<GalleryPreview />
 			<AboutIntro />
-			<Services preview />
 			<About />
+			<Services preview />
 			{/* <Store /> */}
 		</>
 	);
