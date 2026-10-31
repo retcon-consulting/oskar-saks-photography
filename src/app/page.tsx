@@ -19,8 +19,8 @@ export default function Home() {
 		<>
 			<Hero />
 			<GalleryPreview />
-			<Services preview />
 			<AboutIntro />
+			<Services preview />
 			<About />
 			{/* <Store /> */}
 		</>
