@@ -245,7 +245,8 @@ export async function movePhotosAction(input: { ids: string[]; to: string }): Pr
   await verifyAdmin();
   const ids = bulkIdsSchema.safeParse(input.ids);
   if (!ids.success) return { ok: false, error: "Select between 1 and 500 photos" };
-  const target = await findGallery(input.to);
+  // "Unassigned photos" is a valid destination too: it's how photos are set aside without being deleted.
+  const target = await findGallery(input.to, { allowHidden: true });
   if (!target) return { ok: false, error: "Choose a gallery to move them to" };
 
   const photos = await db.photo.findMany({

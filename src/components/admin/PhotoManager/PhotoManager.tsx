@@ -154,7 +154,11 @@ export default function PhotoManager({ categories }: { categories: AdminCategory
           key={`${category.slug}:${category.photos.map((photo) => `${photo.id}.${photo.alt}.${photo.title}.${photo.cover}`).join("|")}`}
           slug={category.slug}
           photos={category.photos}
-          moveTargets={galleries.filter((item) => item.slug !== category.slug).map(({ slug, label }) => ({ slug, label }))}
+          moveTargets={[
+            ...galleries.filter((item) => item.slug !== category.slug).map(({ slug, label }) => ({ slug, label })),
+            // Set aside without deleting. Hidden when already viewing it. (Slug matches UNASSIGNED_SLUG in lib/gallery, which is server-only.)
+            ...(category.hidden ? [] : [{ slug: "unassigned", label: unassigned?.label ?? "Unassigned photos" }]),
+          ]}
           onNotice={setNotice}
         />
       )}
