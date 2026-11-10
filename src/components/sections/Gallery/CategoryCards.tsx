@@ -2,17 +2,16 @@ import type { CSSProperties } from "react";
 import FadeImage from "@/components/ui/FadeImage/FadeImage";
 import Link from "next/link";
 import Reveal from "@/components/ui/Reveal/Reveal";
-import { CATEGORIES } from "@/data/photos";
-import { getCategoryContent, getPhotosByCategory } from "@/lib/gallery";
+import { getListedCategories, getPhotosByCategory } from "@/lib/gallery";
 import styles from "./categoryCards.module.scss";
 
 export default async function CategoryCards() {
-  const photosByCategory = await Promise.all(CATEGORIES.map((category) => getPhotosByCategory(category.slug)));
-  // Taglines are editable in the admin, so read the saved copy rather than the built-in default.
-  const content = await Promise.all(CATEGORIES.map((category) => getCategoryContent(category.slug)));
+  // Only galleries that have a photo are listed, so every card has a cover to show.
+  const categories = await getListedCategories();
+  const photosByCategory = await Promise.all(categories.map((category) => getPhotosByCategory(category.slug)));
   return (
-    <ul className={styles.grid} style={{ "--count": CATEGORIES.length } as CSSProperties}>
-      {CATEGORIES.map((category, index) => {
+    <ul className={styles.grid} style={{ "--count": categories.length } as CSSProperties}>
+      {categories.map((category, index) => {
         const photos = photosByCategory[index];
         const cover = photos.find((photo) => photo.cover) ?? photos[0];
         if (!cover) return null;
@@ -29,7 +28,7 @@ export default async function CategoryCards() {
               <span className={styles.shade} aria-hidden="true" />
               <span className={styles.body}>
                 <span className={styles.name}>{category.label}</span>
-                <span className={styles.tagline}>{content[index]?.tagline ?? category.tagline}</span>
+                <span className={styles.tagline}>{category.tagline}</span>
                 <span className={styles.view}>
                   View gallery <span aria-hidden="true">→</span>
                 </span>

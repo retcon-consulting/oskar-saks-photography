@@ -35,11 +35,16 @@ model Photo {
   @@index([category, position])
 }
 
+// A gallery. `slug` is the URL (/gallery/<slug>) and the Cloudinary folder, and never changes once created. Photos point at it by
+// slug (Photo.category); the admin actions keep that valid. `hidden` marks the admin-only "Unassigned photos" holding gallery.
 model Category {
-  slug        String @id
+  slug        String  @id
+  label       String
   heading     String
   tagline     String
   description String
+  position    Int     @default(0)
+  hidden      Boolean @default(false)
 }
 
 // Single-row-per-key store for site-wide images (hero, about).

@@ -1,12 +1,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { HERO_PHOTO, CATEGORIES } from '@/data/photos';
+import { HERO_PHOTO } from '@/data/photos';
+import { getListedCategories } from '@/lib/gallery';
 import { getHomeContent, renderTitle } from '@/lib/siteContent';
 import Snowfall from './Snowfall';
 import styles from './hero.module.scss';
 
 export default async function Hero() {
-	const content = await getHomeContent();
+	const [content, categories] = await Promise.all([getHomeContent(), getListedCategories()]);
 	return (
 		<section id='home' className={styles.hero} aria-labelledby='hero-title'>
 			<div className={styles.frame}>
@@ -45,7 +46,7 @@ export default async function Hero() {
 
 			<div className={styles.meta}>
 				<ul className={styles.categories} aria-label='Specialties'>
-					{CATEGORIES.map((category) => (
+					{categories.map((category) => (
 						<li key={category.slug}>{category.label}</li>
 					))}
 				</ul>

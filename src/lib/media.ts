@@ -3,7 +3,8 @@ export const MEDIA_FORMATS = ["jpg", "jpeg", "png", "webp"];
 export const MEDIA_ACCEPT = "image/jpeg,image/png,image/webp";
 export const MEDIA_UPLOAD_TAG = "pending-gallery-upload";
 export const MEDIA_FOLDER = "oskar-saks/gallery";
-export const MEDIA_PUBLIC_ID_PATTERN = /^oskar-saks\/gallery\/(families|couples|events)\/[A-Za-z0-9_-]{2,40}$/;
+// Galleries are created in the admin, so the folder is any slug; the upload action also checks the folder matches the gallery.
+export const MEDIA_PUBLIC_ID_PATTERN = /^oskar-saks\/gallery\/[a-z0-9]+(?:-[a-z0-9]+)*\/[A-Za-z0-9_-]{2,40}$/;
 
 export function mediaFolder(category: string) {
   return `${MEDIA_FOLDER}/${category}`;

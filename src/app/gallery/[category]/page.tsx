@@ -4,13 +4,15 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PageHero from "@/components/ui/PageHero/PageHero";
 import PhotoGrid from "@/components/sections/Gallery/PhotoGrid";
-import { CATEGORIES } from "@/data/photos";
-import { getCategoryContent, getPhotosByCategory } from "@/lib/gallery";
+import { getCategories, getCategoryContent, getListedCategories, getPhotosByCategory } from "@/lib/gallery";
 import { pageMetadata } from "@/lib/seo";
 import styles from "@/components/sections/Gallery/categoryPage.module.scss";
 
-export function generateStaticParams() {
-  return CATEGORIES.map((category) => ({ category: category.slug }));
+// With Cache Components this list must never be empty. The admin can't delete the last gallery, so it isn't.
+// Galleries added later are rendered on demand the first time they are visited.
+export async function generateStaticParams() {
+  const categories = await getCategories();
+  return categories.map((category) => ({ category: category.slug }));
 }
 
 export async function generateMetadata({ params }: PageProps<"/gallery/[category]">): Promise<Metadata> {
@@ -33,8 +35,8 @@ async function CategoryContent({ params }: { params: PageProps<"/gallery/[catego
   const category = await getCategoryContent(slug);
   if (!category) notFound();
 
-  const others = CATEGORIES.filter((item) => item.slug !== category.slug);
-  const photos = await getPhotosByCategory(category.slug);
+  const [listed, photos] = await Promise.all([getListedCategories(), getPhotosByCategory(category.slug)]);
+  const others = listed.filter((item) => item.slug !== category.slug);
 
   return (
     <>

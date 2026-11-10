@@ -15,8 +15,11 @@ import { arrayMove, rectSortingStrategy, SortableContext, sortableKeyboardCoordi
 import { CSS } from "@dnd-kit/utilities";
 import {
   addPhotoAction,
+  createCategoryAction,
+  deleteCategoryAction,
   deletePhotoAction,
   deletePhotosAction,
+  movePhotosAction,
   reorderPhotosAction,
   signUploadAction,
   updateCategoryAction,
@@ -40,6 +43,8 @@ type AdminCategory = {
   heading: string;
   tagline: string;
   description: string;
+  // The "Unassigned photos" holding gallery: no page of its own, just somewhere to sort photos out from.
+  hidden: boolean;
   photos: AdminPhoto[];
 };
 
@@ -47,48 +52,156 @@ export default function PhotoManager({ categories }: { categories: AdminCategory
   const [active, setActive] = useState(categories[0]?.slug ?? "");
   // Lives here, not in the grid, because the grid remounts when its photos change (e.g. after a delete).
   const [notice, setNotice] = useState<string | null>(null);
+  const [adding, setAdding] = useState(false);
   const category = categories.find((item) => item.slug === active) ?? categories[0];
   if (!category) return null;
+
+  const galleries = categories.filter((item) => !item.hidden);
+  const unassigned = categories.find((item) => item.hidden);
+
+  const select = (slug: string) => {
+    setActive(slug);
+    setNotice(null);
+    setAdding(false);
+  };
 
   return (
     <div className={styles.manager}>
       <div className={styles.tabs} role="tablist" aria-label="Galleries">
-        {categories.map((item) => (
+        {galleries.map((item) => (
           <button
             key={item.slug}
             type="button"
             role="tab"
-            aria-selected={item.slug === category.slug}
-            className={item.slug === category.slug ? styles.tabActive : styles.tab}
-            onClick={() => {
-              setActive(item.slug);
-              setNotice(null);
-            }}
+            aria-selected={item.slug === category.slug && !adding}
+            className={item.slug === category.slug && !adding ? styles.tabActive : styles.tab}
+            onClick={() => select(item.slug)}
           >
             {item.label} <span>{item.photos.length}</span>
           </button>
         ))}
+        <button
+          type="button"
+          className={`${styles.tab} ${styles.tabAdd}`}
+          aria-expanded={adding}
+          onClick={() => {
+            setAdding((open) => !open);
+            setNotice(null);
+          }}
+        >
+          + Add new
+        </button>
+        {unassigned && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={unassigned.slug === category.slug && !adding}
+            className={`${styles.tab} ${styles.tabUnassigned}`}
+            onClick={() => select(unassigned.slug)}
+          >
+            {unassigned.label} <span>{unassigned.photos.length}</span>
+          </button>
+        )}
       </div>
-      <CopyEditor key={`copy-${category.slug}`} category={category} />
-      <Uploader key={`up-${category.slug}`} slug={category.slug} />
-      <p className={styles.hint}>
-        <strong>Drag a photo by its image</strong> to reorder; the others shift to make room. The gallery shows photos in
-        three columns at their natural shape, uncropped, placing each one in the shortest column, so the order reads
-        left to right. The <strong>cover</strong> is the photo shown on the gallery cards. Tick the box on a photo to select
-        several (shift-click selects a range), then delete them together.
-      </p>
+
+      {adding && (
+        <AddGallery
+          onCancel={() => setAdding(false)}
+          onCreated={(slug) => {
+            select(slug);
+            setNotice("Gallery created. Add its copy and photos below; it shows on the site once it has a photo.");
+          }}
+        />
+      )}
+
+      {category.hidden ? (
+        <p className={styles.hint}>
+          These photos came from galleries that were deleted. They aren&rsquo;t shown on the site. Tick the photos you want, then
+          move them into a gallery or delete them.
+        </p>
+      ) : (
+        <>
+          <CopyEditor
+            key={`copy-${category.slug}`}
+            category={category}
+            canDelete={galleries.length > 1}
+            onDeleted={(moved) => {
+              const next = galleries.find((item) => item.slug !== category.slug);
+              if (next) setActive(next.slug);
+              setNotice(
+                moved > 0
+                  ? `Gallery deleted. Its ${moved} ${moved === 1 ? "photo is" : "photos are"} now under Unassigned photos.`
+                  : "Gallery deleted.",
+              );
+            }}
+          />
+          <Uploader key={`up-${category.slug}`} slug={category.slug} />
+          <p className={styles.hint}>
+            <strong>Drag a photo by its image</strong> to reorder; the others shift to make room. The gallery shows photos in
+            three columns at their natural shape, uncropped, placing each one in the shortest column, so the order reads
+            left to right. The <strong>cover</strong> is the photo shown on the gallery cards. Tick the box on a photo to select
+            several (shift-click selects a range), then move or delete them together.
+          </p>
+        </>
+      )}
       {notice && <p className={styles.ok}>{notice}</p>}
       {category.photos.length === 0 ? (
-        <p className={styles.empty}>No photos in this gallery yet. Upload some above.</p>
+        <p className={styles.empty}>
+          {category.hidden ? "Nothing left to sort out." : "No photos in this gallery yet. Upload some above."}
+        </p>
       ) : (
         <SortableGrid
           key={`${category.slug}:${category.photos.map((photo) => `${photo.id}.${photo.alt}.${photo.title}.${photo.cover}`).join("|")}`}
           slug={category.slug}
           photos={category.photos}
+          moveTargets={galleries.filter((item) => item.slug !== category.slug).map(({ slug, label }) => ({ slug, label }))}
           onNotice={setNotice}
         />
       )}
     </div>
+  );
+}
+
+// Names a new gallery. Its address (/gallery/<name>) is made from the name and stays the same if the name is changed later.
+function AddGallery({ onCreated, onCancel }: { onCreated: (slug: string) => void; onCancel: () => void }) {
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => input.current?.focus(), []);
+
+  return (
+    <form
+      className={styles.copy}
+      action={(formData) =>
+        startTransition(async () => {
+          setError(null);
+          const result = await createCategoryAction({ label: String(formData.get("label") ?? "") });
+          if (result.ok) onCreated(result.slug);
+          else setError(result.error);
+        })
+      }
+    >
+      <h2>New gallery</h2>
+      <label>
+        <span>
+          Name <span className={styles.labelHint}>(shown on its tab, in the menu and on its card)</span>
+        </span>
+        <input ref={input} name="label" maxLength={40} required />
+      </label>
+      <div className={styles.actions}>
+        <button type="submit" className={styles.primary} disabled={pending}>
+          {pending ? "Creating…" : "Create gallery"}
+        </button>
+        <button type="button" className={styles.outline} disabled={pending} onClick={onCancel}>
+          Cancel
+        </button>
+        {error && (
+          <p className={styles.error} role="alert">
+            {error}
+          </p>
+        )}
+      </div>
+    </form>
   );
 }
 
@@ -99,11 +212,39 @@ function useResult() {
   return { message, report, setMessage };
 }
 
-function CopyEditor({ category }: { category: AdminCategory }) {
+function CopyEditor({
+  category,
+  canDelete,
+  onDeleted,
+}: {
+  category: AdminCategory;
+  // False when this is the only gallery: the site always keeps at least one.
+  canDelete: boolean;
+  onDeleted: (moved: number) => void;
+}) {
   const [pending, startTransition] = useTransition();
   const { message, report } = useResult();
+  const [confirming, setConfirming] = useState(false);
+  const [deleting, startDelete] = useTransition();
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  function confirmDelete() {
+    setDeleteError(null);
+    startDelete(async () => {
+      const result = await deleteCategoryAction(category.slug);
+      if (result.ok) {
+        setConfirming(false);
+        onDeleted(result.moved);
+      } else {
+        setDeleteError(result.error);
+      }
+    });
+  }
+
+  const count = category.photos.length;
 
   return (
+    <>
     <form
       className={styles.copy}
       action={(formData) =>
@@ -111,6 +252,7 @@ function CopyEditor({ category }: { category: AdminCategory }) {
           report(
             await updateCategoryAction({
               slug: category.slug,
+              label: String(formData.get("label") ?? ""),
               heading: String(formData.get("heading") ?? ""),
               tagline: String(formData.get("tagline") ?? ""),
               description: String(formData.get("description") ?? ""),
@@ -121,6 +263,12 @@ function CopyEditor({ category }: { category: AdminCategory }) {
       }
     >
       <h2>Page copy</h2>
+      <label>
+        <span>
+          Name <span className={styles.labelHint}>(shown on its tab, in the menu and on its card)</span>
+        </span>
+        <input name="label" defaultValue={category.label} maxLength={40} required />
+      </label>
       <label>
         <span>Heading</span>
         <input name="heading" defaultValue={category.heading} maxLength={120} required />
@@ -139,9 +287,40 @@ function CopyEditor({ category }: { category: AdminCategory }) {
         <button type="submit" className={styles.primary} disabled={pending}>
           {pending ? "Saving…" : "Save copy"}
         </button>
+        <button
+          type="button"
+          className={styles.danger}
+          disabled={pending || !canDelete}
+          title={canDelete ? undefined : "There must always be at least one gallery"}
+          onClick={() => {
+            setDeleteError(null);
+            setConfirming(true);
+          }}
+        >
+          Delete gallery
+        </button>
         {message && <p className={message.error ? styles.error : styles.ok}>{message.text}</p>}
       </div>
+      {!canDelete && <p className={styles.hint}>This is the only gallery, and the site always keeps at least one.</p>}
     </form>
+    <DeleteDialog
+      open={confirming}
+      title={`Delete the ${category.label} gallery?`}
+      text={
+        count > 0
+          ? `Its page is removed from the site. Its ${count} ${count === 1 ? "photo moves" : "photos move"} to Unassigned photos, where you can add ${count === 1 ? "it" : "them"} to another gallery or delete ${count === 1 ? "it" : "them"}.`
+          : "Its page is removed from the site. It has no photos."
+      }
+      deleting={deleting}
+      error={deleteError}
+      onCancel={() => {
+        if (deleting) return;
+        setConfirming(false);
+        setDeleteError(null);
+      }}
+      onConfirm={confirmDelete}
+    />
+    </>
   );
 }
 
@@ -208,8 +387,19 @@ function Uploader({ slug }: { slug: string }) {
   );
 }
 
-function SortableGrid({ slug, photos, onNotice }: { slug: string; photos: AdminPhoto[]; onNotice: (message: string | null) => void }) {
+type SortableGridProps = {
+  slug: string;
+  photos: AdminPhoto[];
+  // The other public galleries a selection can be moved into.
+  moveTargets: { slug: string; label: string }[];
+  onNotice: (message: string | null) => void;
+};
+
+function SortableGrid({ slug, photos, moveTargets, onNotice }: SortableGridProps) {
   const [items, setItems] = useState(photos);
+  const [moveTo, setMoveTo] = useState(moveTargets[0]?.slug ?? "");
+  const [moving, startMove] = useTransition();
+  const [moveError, setMoveError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -273,6 +463,20 @@ function SortableGrid({ slug, photos, onNotice }: { slug: string; photos: AdminP
     });
   }, []);
 
+  function moveSelected() {
+    setMoveError(null);
+    startMove(async () => {
+      const result = await movePhotosAction({ ids: [...selected], to: moveTo });
+      if (!result.ok) {
+        setMoveError(result.error);
+        return;
+      }
+      setSelected(new Set());
+      const target = moveTargets.find((item) => item.slug === moveTo);
+      onNotice(`Moved ${result.moved} ${result.moved === 1 ? "photo" : "photos"} to ${target?.label ?? "the gallery"}.`);
+    });
+  }
+
   function confirmBulkDelete() {
     setDeleteError(null);
     startDelete(async () => {
@@ -319,6 +523,31 @@ function SortableGrid({ slug, photos, onNotice }: { slug: string; photos: AdminP
           <button type="button" className={styles.outline} onClick={() => setSelected(new Set())}>
             Clear
           </button>
+          {moveTargets.length > 0 && (
+            <>
+              <select
+                className={styles.moveSelect}
+                aria-label="Move the selected photos to"
+                value={moveTo}
+                disabled={moving}
+                onChange={(event) => setMoveTo(event.target.value)}
+              >
+                {moveTargets.map((item) => (
+                  <option key={item.slug} value={item.slug}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className={styles.outline} disabled={moving || !moveTo} onClick={moveSelected}>
+                {moving ? "Moving…" : "Move"}
+              </button>
+            </>
+          )}
+          {moveError && (
+            <span className={styles.error} role="alert">
+              {moveError}
+            </span>
+          )}
           <button
             type="button"
             className={styles.dangerSolid}

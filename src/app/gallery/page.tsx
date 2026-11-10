@@ -6,7 +6,7 @@ import styles from "@/components/sections/Gallery/categoryPage.module.scss";
 
 export const metadata: Metadata = pageMetadata({
   title: "Gallery",
-  description: "Browse photography galleries of families, couples, and events by Oskar Saks.",
+  description: "Browse photography galleries by Oskar Saks.",
   path: "/gallery",
 });
 
@@ -20,7 +20,7 @@ export default function GalleryPage() {
             Choose a <em>story</em>
           </>
         }
-        lede="Two collections, one approach: honest moments in beautiful light."
+        lede="Every collection, one approach: honest moments in beautiful light."
       />
       <div className={styles.body}>
         <CategoryCards />

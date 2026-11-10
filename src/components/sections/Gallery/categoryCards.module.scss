@@ -7,7 +7,8 @@
 	grid-template-columns: 1fr;
 
 	@include from($bp-lg) {
-		grid-template-columns: repeat(var(--count, 3), 1fr);
+		// One column per gallery up to three; more than that wraps onto further rows instead of squeezing the cards.
+		grid-template-columns: repeat(min(var(--count, 3), 3), 1fr);
 		gap: 1.5rem;
 	}
 }

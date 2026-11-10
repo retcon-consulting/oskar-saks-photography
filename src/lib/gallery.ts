@@ -1,6 +1,11 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { CATEGORIES, getCategory, type CategorySlug, type Photo } from "@/data/photos";
+import type { Photo } from "@/data/photos";
 import { db } from "@/lib/db";
+
+// The admin-only holding gallery for photos whose gallery was deleted. It never appears on the public site.
+export const UNASSIGNED_SLUG = "unassigned";
+
+export type Gallery = { slug: string; label: string; heading: string; tagline: string; description: string };
 
 type PhotoRow = Awaited<ReturnType<typeof db.photo.findMany>>[number];
 
@@ -11,13 +16,13 @@ function toPhoto(row: PhotoRow): Photo {
     width: row.width,
     height: row.height,
     alt: row.alt,
-    category: row.category as CategorySlug,
+    category: row.category,
     title: row.title ?? undefined,
     cover: row.cover,
   };
 }
 
-export async function getPhotosByCategory(slug: CategorySlug): Promise<Photo[]> {
+export async function getPhotosByCategory(slug: string): Promise<Photo[]> {
   "use cache";
   cacheTag("photos");
   cacheLife("days");
@@ -25,17 +30,37 @@ export async function getPhotosByCategory(slug: CategorySlug): Promise<Photo[]> 
   return rows.map(toPhoto);
 }
 
-// Copy is editable in the admin; the text in src/data/photos.ts is the fallback.
-export async function getCategoryContent(slug: string) {
+// Every public gallery in display order, empty ones included (the page for an empty gallery still exists; it is just not linked).
+export async function getCategories(): Promise<Gallery[]> {
   "use cache";
   cacheTag("categories");
   cacheLife("days");
-  const base = getCategory(slug);
-  if (!base) return undefined;
-  const override = await db.category.findUnique({ where: { slug } });
-  return override
-    ? { ...base, heading: override.heading, tagline: override.tagline, description: override.description }
-    : base;
+  return db.category.findMany({
+    where: { hidden: false },
+    orderBy: [{ position: "asc" }, { slug: "asc" }],
+    select: { slug: true, label: true, heading: true, tagline: true, description: true },
+  });
 }
 
-export { CATEGORIES };
+// The galleries visitors are pointed to (nav, home cards, sitemap, "also see"): a gallery shows up once it has a photo.
+export async function getListedCategories(): Promise<Gallery[]> {
+  "use cache";
+  cacheTag("categories", "photos");
+  cacheLife("days");
+  const [categories, counts] = await Promise.all([
+    getCategories(),
+    db.photo.groupBy({ by: ["category"], _count: { _all: true } }),
+  ]);
+  const filled = new Set(counts.map((row) => row.category));
+  return categories.filter((category) => filled.has(category.slug));
+}
+
+// Copy is editable in the admin. Unknown and hidden slugs return undefined, so their page is a 404.
+export async function getCategoryContent(slug: string): Promise<Gallery | undefined> {
+  "use cache";
+  cacheTag("categories");
+  cacheLife("days");
+  const row = await db.category.findUnique({ where: { slug } });
+  if (!row || row.hidden) return undefined;
+  return { slug: row.slug, label: row.label, heading: row.heading, tagline: row.tagline, description: row.description };
+}

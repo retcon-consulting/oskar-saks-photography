@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useActiveSection } from "@/hooks/useActiveSection";
-import { CATEGORIES } from "@/data/photos";
 // import { instagramUrl, NAV_LINKS, PHOTOGRAPHER } from "@/lib/siteConfig";
 import { NAV_LINKS, PHOTOGRAPHER } from "@/lib/siteConfig";
 import styles from "./header.module.scss";
@@ -12,8 +11,11 @@ import styles from "./header.module.scss";
 // How long scrolling must pause before the desktop header slides away.
 const IDLE_HIDE_MS = 2000;
 
+// The galleries in the Gallery dropdown, in display order. They come from the database, so the server passes them down.
+type HeaderProps = { categories: { slug: string; label: string }[] };
+
 // export default function Header({ instagram }: { instagram: string }) {
-export default function Header() {
+export default function Header({ categories }: HeaderProps) {
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
   // Desktop only (see header.module.scss): the header slides away once scrolling has stopped for a few seconds.
@@ -142,7 +144,7 @@ export default function Header() {
                 </Link>
                 {id === "gallery" && (
                   <ul className={styles.dropdown}>
-                    {CATEGORIES.map((category) => (
+                    {categories.map((category) => (
                       <li key={category.slug}>
                         <Link href={`/gallery/${category.slug}`} className={styles.dropLink} onClick={closeGallery}>
                           {category.label}
@@ -187,7 +189,7 @@ export default function Header() {
                 </Link>
                 {id === "gallery" && (
                   <ul className={styles.subLinks}>
-                    {CATEGORIES.map((category) => (
+                    {categories.map((category) => (
                       <li key={category.slug}>
                         <Link href={`/gallery/${category.slug}`} onClick={closeMenu}>
                           {category.label}

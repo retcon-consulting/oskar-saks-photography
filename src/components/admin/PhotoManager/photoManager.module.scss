@@ -64,6 +64,33 @@
   border-color: var(--color-accent-deep);
 }
 
+// "+ Add new": a pill like the galleries, but with a dashed outline so it reads as an action, not a gallery.
+.tabAdd {
+  color: var(--color-text-dim);
+  background: transparent;
+  border-style: dashed;
+
+  &:hover,
+  &[aria-expanded='true'] {
+    color: var(--color-accent-deep);
+    border-color: var(--color-accent-deep);
+  }
+}
+
+// "Unassigned photos": dashed like "+ Add new", in coral so it reads as "these photos exist but nothing is done with them yet".
+.tabUnassigned {
+  color: #c8402a;
+  background: transparent;
+  border-style: dashed;
+  border-color: #c8402a;
+
+  &[aria-selected='true'] {
+    color: #c8402a;
+    background: hsla(10, 70%, 50%, 0.12);
+    border-color: #c8402a;
+  }
+}
+
 .copy,
 .upload {
   padding: 1.25rem;
@@ -343,6 +370,18 @@
   background: var(--color-surface);
   border-radius: 999px;
   box-shadow: var(--shadow-lift);
+}
+
+.moveSelect {
+  padding: 0.6rem 0.75rem 0.5rem;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-text);
+  background: #fff;
+  border: 1px solid hsla(218, 30%, 40%, 0.35);
+  border-radius: var(--radius-sm);
 }
 
 .selectionCount {

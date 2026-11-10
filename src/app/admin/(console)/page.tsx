@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { CATEGORIES } from '@/data/photos';
 import AdminSkeleton from '@/components/admin/AdminSkeleton/AdminSkeleton';
 import AdminTabs from '@/components/admin/AdminTabs/AdminTabs';
 import { parseTab } from '@/components/admin/AdminTabs/tabs';
@@ -20,32 +19,35 @@ export const metadata: Metadata = {
 };
 
 async function getGalleryCategories() {
-	const [photos, overrides] = await Promise.all([
+	const [photos, categories] = await Promise.all([
 		db.photo.findMany({
 			orderBy: [{ position: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
 		}),
-		db.category.findMany(),
+		db.category.findMany({ orderBy: [{ hidden: 'asc' }, { position: 'asc' }, { slug: 'asc' }] }),
 	]);
 
-	return CATEGORIES.map((category) => {
-		const override = overrides.find((item) => item.slug === category.slug);
-		return {
-			slug: category.slug,
-			label: category.label,
-			heading: override?.heading ?? category.heading,
-			tagline: override?.tagline ?? category.tagline,
-			description: override?.description ?? category.description,
-			photos: photos
-				.filter((photo) => photo.category === category.slug)
-				.map(({ id, url, alt, title, cover }) => ({
-					id,
-					url,
-					alt,
-					title: title ?? '',
-					cover,
-				})),
-		};
-	});
+	return (
+		categories
+			.map((category) => ({
+				slug: category.slug,
+				label: category.label,
+				heading: category.heading,
+				tagline: category.tagline,
+				description: category.description,
+				hidden: category.hidden,
+				photos: photos
+					.filter((photo) => photo.category === category.slug)
+					.map(({ id, url, alt, title, cover }) => ({
+						id,
+						url,
+						alt,
+						title: title ?? '',
+						cover,
+					})),
+			}))
+			// "Unassigned photos" only shows up while it holds something to sort out.
+			.filter((category) => !category.hidden || category.photos.length > 0)
+	);
 }
 
 // One page holds every section; the tabs switch in the browser, so only this first load shows the skeleton.
