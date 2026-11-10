@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type KeyboardEvent, type ReactNode } from "react";
+import { usePathname } from "next/navigation";
 import { ADMIN_TABS, type AdminTabId } from "./tabs";
 import styles from "./adminTabs.module.scss";
 
@@ -8,6 +9,15 @@ import styles from "./adminTabs.module.scss";
 // and a half-typed edit survives a trip to another tab.
 export default function AdminTabs({ initial, panels }: { initial: AdminTabId; panels: Record<AdminTabId, ReactNode> }) {
   const [active, setActive] = useState<AdminTabId>(initial);
+
+  // The console keeps its state while the admin is on another page, so coming back through the Admin button would reopen the tab
+  // they left. Any change of page puts it back on Home, at plain /admin. Switching tabs only changes the query string, not the path.
+  const pathname = usePathname();
+  const [lastPathname, setLastPathname] = useState(pathname);
+  if (pathname !== lastPathname) {
+    setLastPathname(pathname);
+    setActive("home");
+  }
 
   const select = (id: AdminTabId) => {
     setActive(id);

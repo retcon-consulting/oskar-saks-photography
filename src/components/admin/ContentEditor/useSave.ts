@@ -12,5 +12,6 @@ export function useSave() {
       const result = await run();
       setMessage(result.ok ? { text: "Saved", error: false } : { text: result.error, error: true });
     });
-  return { pending, message, save };
+  const clear = () => setMessage(null);
+  return { pending, message, save, clear };
 }

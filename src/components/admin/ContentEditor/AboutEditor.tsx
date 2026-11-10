@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { updateAboutSectionAction } from "@/app/admin/content-actions";
 import { discardSiteUploadAction, saveSiteImagesAction, type SaveSiteImagesInput } from "@/app/admin/site-image-actions";
 import { ABOUT_PHOTO, OSKAR_PHOTO } from "@/data/photos";
@@ -48,8 +48,48 @@ export default function AboutEditor({ content, images }: { content: AboutContent
   const [slots, setSlots] = useState<Slots>(saved);
   const [staged, setStaged] = useState<Staged>({ "about-portrait": false, "about-couple": false });
 
+  // The text as last saved. The fields are uncontrolled, so Cancel remounts a section (new `key`) to put these values back.
+  const [copy, setCopy] = useState({
+    pageTitle: content.pageTitle,
+    intro: content.intro,
+    sectionTitle: content.sectionTitle,
+    caption: content.caption,
+    paragraphs: content.paragraphs.join("\n\n"),
+  });
+  const [formKey, setFormKey] = useState({ intro: 0, vision: 0 });
+
+  // Puts both sections back to what is saved: text, photos, messages. Used when the admin leaves the page, so nothing unsaved
+  // is waiting for them when they come back (the admin page keeps its state while it is out of view).
+  const resetAll = () => {
+    setSlots(saved);
+    setStaged({ "about-portrait": false, "about-couple": false });
+    setFormKey((current) => ({ intro: current.intro + 1, vision: current.vision + 1 }));
+    intro.clear();
+    vision.clear();
+  };
+  const resetRef = useRef(resetAll);
+  useEffect(() => {
+    resetRef.current = resetAll;
+  });
+  // Runs when the editor is hidden or removed by navigating away.
+  useEffect(() => () => resetRef.current(), []);
+
   const stagedUploads = SITE_IMAGE_KEYS.flatMap((key) => (staged[key] && slots[key] ? [slots[key].publicId] : []));
-  const guard = useUnsavedGuard(stagedUploads.length > 0, () => Promise.all(stagedUploads.map((id) => discardSiteUploadAction(id))));
+  const guard = useUnsavedGuard(stagedUploads.length > 0, () => {
+    resetAll();
+    return Promise.all(stagedUploads.map((id) => discardSiteUploadAction(id)));
+  });
+
+  // Throws away a section's unsaved changes: its text goes back to what was saved, its photo goes back to the saved one,
+  // and an upload that was never saved is deleted from Cloudinary.
+  const cancel = (section: "intro" | "vision", key: SiteImageKey, state: ReturnType<typeof useSave>) => {
+    const unsaved = staged[key] ? slots[key] : null;
+    if (unsaved) void discardSiteUploadAction(unsaved.publicId);
+    setSlots((current) => ({ ...current, [key]: saved[key] }));
+    setStaged((current) => ({ ...current, [key]: false }));
+    setFormKey((current) => ({ ...current, [section]: current[section] + 1 }));
+    state.clear();
+  };
 
   const setSlot = (key: SiteImageKey) => (value: PickerValue | null, isStaged: boolean) => {
     setSlots((current) => ({ ...current, [key]: value }));
@@ -85,26 +125,26 @@ export default function AboutEditor({ content, images }: { content: AboutContent
         className={styles.form}
         action={(formData) =>
           intro.save(async () => {
-            const copy = await updateAboutSectionAction("intro", {
-              pageTitle: String(formData.get("pageTitle") ?? ""),
-              intro: String(formData.get("intro") ?? ""),
-            });
-            return copy.ok ? savePhoto("about-portrait") : copy;
+            const fields = { pageTitle: String(formData.get("pageTitle") ?? ""), intro: String(formData.get("intro") ?? "") };
+            const text = await updateAboutSectionAction("intro", fields);
+            if (!text.ok) return text;
+            setCopy((current) => ({ ...current, ...fields }));
+            return savePhoto("about-portrait");
           })
         }
       >
-        <section className={styles.panel}>
+        <section key={`intro-${formKey.intro}`} className={styles.panel}>
           <h2>Hi, I&rsquo;m Oskar</h2>
           <p className={styles.hint}>The introduction with Oskar&rsquo;s portrait. Shown at the top of the About page and on the home page.</p>
           <label>
             <span>
               Heading <span className={styles.labelHint}>({TITLE_HINT})</span>
             </span>
-            <input name="pageTitle" defaultValue={content.pageTitle} maxLength={120} required />
+            <input name="pageTitle" defaultValue={copy.pageTitle} maxLength={120} required />
           </label>
           <label>
             <span>Introduction</span>
-            <textarea name="intro" defaultValue={content.intro} rows={10} maxLength={2400} required />
+            <textarea name="intro" defaultValue={copy.intro} rows={10} maxLength={2400} required />
           </label>
           <SiteImagePicker
             slotKey="about-portrait"
@@ -116,43 +156,47 @@ export default function AboutEditor({ content, images }: { content: AboutContent
             onChange={setSlot("about-portrait")}
           />
         </section>
-        <SaveBar pending={intro.pending} message={intro.message} />
+        <SaveBar pending={intro.pending} message={intro.message} onCancel={() => cancel("intro", "about-portrait", intro)} />
       </form>
 
       <form
         className={styles.form}
         action={(formData) =>
           vision.save(async () => {
-            const copy = await updateAboutSectionAction("vision", {
+            const paragraphs = String(formData.get("paragraphs") ?? "")
+              .split(/\n\s*\n/)
+              .map((paragraph) => paragraph.trim())
+              .filter(Boolean);
+            const fields = {
               sectionTitle: String(formData.get("sectionTitle") ?? ""),
               caption: String(formData.get("caption") ?? ""),
-              paragraphs: String(formData.get("paragraphs") ?? "")
-                .split(/\n\s*\n/)
-                .map((paragraph) => paragraph.trim())
-                .filter(Boolean),
-            });
-            return copy.ok ? savePhoto("about-couple") : copy;
+              paragraphs,
+            };
+            const text = await updateAboutSectionAction("vision", fields);
+            if (!text.ok) return text;
+            setCopy((current) => ({ ...current, ...fields, paragraphs: paragraphs.join("\n\n") }));
+            return savePhoto("about-couple");
           })
         }
       >
-        <section className={styles.panel}>
+        <section key={`vision-${formKey.vision}`} className={styles.panel}>
           <h2>Two People, One Shared Vision</h2>
           <p className={styles.hint}>The section with the photo of Oskar and Katya. Shown below the introduction on the About page and the home page.</p>
           <label>
             <span>
               Heading <span className={styles.labelHint}>(a new line breaks the heading; {TITLE_HINT})</span>
             </span>
-            <textarea name="sectionTitle" defaultValue={content.sectionTitle} rows={2} maxLength={120} required />
+            <textarea name="sectionTitle" defaultValue={copy.sectionTitle} rows={2} maxLength={120} required />
           </label>
           <label>
             <span>Caption under the photo</span>
-            <input name="caption" defaultValue={content.caption} maxLength={80} required />
+            <input name="caption" defaultValue={copy.caption} maxLength={80} required />
           </label>
           <label>
             <span>
               Paragraphs <span className={styles.labelHint}>(leave a blank line between paragraphs)</span>
             </span>
-            <textarea name="paragraphs" defaultValue={content.paragraphs.join("\n\n")} rows={10} required />
+            <textarea name="paragraphs" defaultValue={copy.paragraphs} rows={10} required />
           </label>
           <SiteImagePicker
             slotKey="about-couple"
@@ -164,7 +208,7 @@ export default function AboutEditor({ content, images }: { content: AboutContent
             onChange={setSlot("about-couple")}
           />
         </section>
-        <SaveBar pending={vision.pending} message={vision.message} />
+        <SaveBar pending={vision.pending} message={vision.message} onCancel={() => cancel("vision", "about-couple", vision)} />
       </form>
       <ConfirmLeaveModal open={guard.open} onConfirm={guard.confirm} onCancel={guard.cancel} />
     </div>

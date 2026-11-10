@@ -307,6 +307,12 @@
 		font-size: 0.9rem;
 		color: var(--color-text-dim);
 	}
+
+	// OK and Cancel share one fixed width, so neither looks bigger than the other.
+	.actions button {
+		width: 5.25rem;
+		text-align: center;
+	}
 }
 
 .ok,
