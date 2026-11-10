@@ -30,7 +30,7 @@ export default async function Services({ preview = false }: ServicesProps) {
 
         <ol className={styles.list}>
           {content.items.map((service, index) => {
-            const discounted = service.discountActive && service.discountPercent > 0 && service.discountName !== "";
+            const discounted = !service.contactForPricing && service.discountActive && service.discountPercent > 0 && service.discountName !== "";
             const salePrice = Math.round(service.startingAt * (1 - service.discountPercent / 100));
             return (
             <Reveal as="li" key={service.id} delay={60 * index} className={styles.row}>
@@ -47,9 +47,11 @@ export default async function Services({ preview = false }: ServicesProps) {
                 )}
               </div>
               <div className={styles.side}>
-                <div className={styles.price}>
-                  <span className={styles.label}>From</span>
-                  {discounted ? (
+                <div className={`${styles.price} ${service.contactForPricing ? styles.priceContact : ""}`}>
+                  {!service.contactForPricing && <span className={styles.label}>From</span>}
+                  {service.contactForPricing ? (
+                    <span className={styles.contact}>Contact for pricing</span>
+                  ) : discounted ? (
                     <>
                       <span className={styles.amounts}>
                         <s className={styles.was}>

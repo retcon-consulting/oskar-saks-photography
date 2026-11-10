@@ -30,6 +30,7 @@ export const serviceSchema = z
     description: z.string().trim().min(1, "Every service needs a description").max(600),
     startingAt: z.number().int("Prices are whole dollars").min(0).max(1_000_000),
     includes: z.array(z.string().trim().min(1).max(120)).max(10),
+    contactForPricing: z.boolean().default(false),
     discountActive: z.boolean().default(false),
     discountName: z.string().trim().max(100).default(""),
     discountPercent: z
@@ -97,7 +98,7 @@ export const CONTENT = {
     defaults: {
       title: "Ways to *work together*",
       lede: "Every session is built around you. Here's what's included, with starting prices to help you plan. Reach out for a custom quote.",
-      items: SERVICES.map((service) => ({ ...service, discountActive: false, discountName: "", discountPercent: 0 })),
+      items: SERVICES.map((service) => ({ ...service, contactForPricing: false, discountActive: false, discountName: "", discountPercent: 0 })),
     } satisfies ServicesContent,
   },
   contact: {

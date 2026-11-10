@@ -17,6 +17,7 @@ type Draft = {
   title: string;
   description: string;
   startingAt: string;
+  contactForPricing: boolean;
   includes: string;
   discountActive: boolean;
   discountName: string;
@@ -74,7 +75,8 @@ export default function ServicesEditor({ content }: { content: ServicesContent }
               id: item.id,
               title: item.title,
               description: item.description,
-              startingAt: Number(item.startingAt),
+              startingAt: item.contactForPricing ? 0 : Number(item.startingAt),
+              contactForPricing: item.contactForPricing,
               includes: item.includes
                 .split("\n")
                 .map((line) => line.trim())
@@ -142,6 +144,7 @@ export default function ServicesEditor({ content }: { content: ServicesContent }
               title: "",
               description: "",
               startingAt: "0",
+              contactForPricing: false,
               includes: "",
               discountActive: false,
               discountName: "",
@@ -196,7 +199,9 @@ function ServiceCard({ item, index, count, open, onToggle, onChange, onMove, onR
         <button type="button" className={styles.toggle} aria-expanded={open} onClick={onToggle}>
           <span className={styles.serviceIndex}>{String(index + 1).padStart(2, "0")}</span>
           <span className={styles.serviceTitle}>{name}</span>
-          <span className={styles.servicePrice}>from ${Number(item.startingAt || 0).toLocaleString("en-US")}</span>
+          <span className={styles.servicePrice}>
+            {item.contactForPricing ? "contact for pricing" : `from $${Number(item.startingAt || 0).toLocaleString("en-US")}`}
+          </span>
           <span className={styles.chevron} data-open={open} aria-hidden="true">
             ▾
           </span>
@@ -219,10 +224,19 @@ function ServiceCard({ item, index, count, open, onToggle, onChange, onMove, onR
                 step={1}
                 value={item.startingAt}
                 onChange={(event) => onChange({ startingAt: event.target.value })}
+                disabled={item.contactForPricing}
                 required
               />
             </label>
           </div>
+          <label className={styles.check}>
+            <input
+              type="checkbox"
+              defaultChecked={item.contactForPricing}
+              onChange={(event) => onChange({ contactForPricing: event.target.checked })}
+            />
+            <span>Contact for pricing (hides the price and discount on the public site)</span>
+          </label>
           <label>
             <span>Description</span>
             <textarea
@@ -239,6 +253,7 @@ function ServiceCard({ item, index, count, open, onToggle, onChange, onMove, onR
             </span>
             <textarea value={item.includes} onChange={(event) => onChange({ includes: event.target.value })} rows={4} />
           </label>
+          {!item.contactForPricing && (
           <label className={styles.check}>
             {/* defaultChecked, not checked: React resets the form after a save, and that reset restores a checkbox to
                 its default, so a controlled `checked` snapped back to its first-render value and showed the opposite. */}
@@ -249,7 +264,8 @@ function ServiceCard({ item, index, count, open, onToggle, onChange, onMove, onR
             />
             <span>Active discount</span>
           </label>
-          {item.discountActive && (
+          )}
+          {!item.contactForPricing && item.discountActive && (
             <div className={styles.row}>
               <label>
                 <span>Discount Name</span>
