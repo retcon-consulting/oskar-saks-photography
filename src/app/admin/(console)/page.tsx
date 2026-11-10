@@ -12,6 +12,7 @@ import PhotoManager from '@/components/admin/PhotoManager/PhotoManager';
 import { verifyAdmin } from '@/lib/dal';
 import { db } from '@/lib/db';
 import { getAboutContent, getContactContent, getHomeContent, getServicesContent } from '@/lib/siteContent';
+import { getAboutCouplePhoto, getAboutPortrait } from '@/lib/siteImages';
 
 export const metadata: Metadata = {
 	title: 'Admin',
@@ -50,10 +51,12 @@ async function getGalleryCategories() {
 // One page holds every section; the tabs switch in the browser, so only this first load shows the skeleton.
 async function AdminConsole({ searchParams }: { searchParams: PageProps<'/admin'>['searchParams'] }) {
 	await verifyAdmin();
-	const [{ tab }, home, about, services, contact, categories] = await Promise.all([
+	const [{ tab }, home, about, aboutPortrait, aboutCouple, services, contact, categories] = await Promise.all([
 		searchParams,
 		getHomeContent(),
 		getAboutContent(),
+		getAboutPortrait(),
+		getAboutCouplePhoto(),
 		getServicesContent(),
 		getContactContent(),
 		getGalleryCategories(),
@@ -64,7 +67,7 @@ async function AdminConsole({ searchParams }: { searchParams: PageProps<'/admin'
 			initial={parseTab(typeof tab === 'string' ? tab : undefined)}
 			panels={{
 				home: <HomeEditor content={home} />,
-				about: <AboutEditor content={about} />,
+				about: <AboutEditor content={about} images={{ 'about-portrait': aboutPortrait, 'about-couple': aboutCouple }} />,
 				gallery: <PhotoManager categories={categories} />,
 				services: <ServicesEditor content={services} />,
 				contact: <ContactEditor content={contact} />,

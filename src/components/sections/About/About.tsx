@@ -1,8 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import Reveal from '@/components/ui/Reveal/Reveal';
-import { ABOUT_PHOTO } from '@/data/photos';
 import { getAboutContent, renderTitle } from '@/lib/siteContent';
+import { focalPosition, getAboutCouplePhoto } from '@/lib/siteImages';
 import styles from './about.module.scss';
 
 type AboutProps = {
@@ -12,7 +12,8 @@ type AboutProps = {
 };
 
 export default async function About({ onAboutPage = false }: AboutProps) {
-	const content = await getAboutContent();
+	const [content, photo] = await Promise.all([getAboutContent(), getAboutCouplePhoto()]);
+	const position = focalPosition(photo);
 	const titleId = onAboutPage ? 'about-page-title' : 'about-title';
 	return (
 		// Always follows the "Hi, I'm Oskar" introduction, which has the "about" id and the "About" eyebrow.
@@ -21,12 +22,13 @@ export default async function About({ onAboutPage = false }: AboutProps) {
 				<Reveal className={styles.media}>
 					<div className={styles.portrait}>
 						<Image
-							src={ABOUT_PHOTO.src}
-							alt={ABOUT_PHOTO.alt}
+							src={photo.src}
+							alt={photo.alt}
 							fill
 							sizes='(min-width: 1024px) 40vw, 100vw'
 							quality={90}
 							className={styles.image}
+							style={position ? { objectPosition: position } : undefined}
 						/>
 					</div>
 					<p className={styles.caption}>

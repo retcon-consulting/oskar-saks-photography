@@ -9,7 +9,8 @@ type PageHeroProps = {
   title: ReactNode;
   lede?: string;
   back?: { href: string; label: string };
-  portrait?: { src: string; alt: string };
+  // width/height are the image's real size (the layout crops it square); objectPosition is the admin's chosen focal point.
+  portrait?: { src: string; alt: string; width?: number; height?: number; objectPosition?: string };
   // For use as a section partway down another page (the home page's intro to Oskar) rather than as the top of a page:
   // a section heading instead of the page's h1, normal section spacing instead of clearing the header, and a lazy portrait.
   asSection?: { id: string };
@@ -45,11 +46,12 @@ export default function PageHero({ eyebrow, title, lede, back, portrait, asSecti
             <Image
               src={portrait.src}
               alt={portrait.alt}
-              width={800}
-              height={800}
+              width={portrait.width ?? 800}
+              height={portrait.height ?? 800}
               sizes="(min-width: 768px) 28rem, 80vw"
               quality={90}
               preload={!asSection}
+              style={portrait.objectPosition ? { objectPosition: portrait.objectPosition } : undefined}
             />
           </Reveal>
         )}

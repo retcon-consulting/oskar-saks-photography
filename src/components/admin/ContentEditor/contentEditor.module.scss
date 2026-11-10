@@ -40,6 +40,13 @@
 	}
 }
 
+// Several forms in one tab, each with its own Save button.
+.sections {
+	display: flex;
+	flex-direction: column;
+	gap: 2.5rem;
+}
+
 .panel {
 	display: flex;
 	flex-direction: column;
@@ -200,6 +207,106 @@
 .danger {
 	color: #b3261e;
 	border: 1px solid #b3261e;
+}
+
+// A photo slot inside a copy panel: preview with a focal-point picker, alt text, upload and reset buttons.
+.picker {
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding-top: 1rem;
+	border-top: 1px solid hsla(218, 30%, 40%, 0.15);
+
+	img {
+		display: block;
+	}
+
+	input[type='range'] {
+		padding: 0;
+		border: 0;
+		background: none;
+		accent-color: var(--color-accent-deep);
+	}
+}
+
+.pickerLabel {
+	font-family: var(--font-mono);
+	font-size: 0.68rem;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--color-text-dim);
+}
+
+.focalStage {
+	position: relative;
+	align-self: flex-start;
+	// A fixed width; the height follows the photo's own proportions.
+	width: min(100%, 20rem);
+	cursor: crosshair;
+	touch-action: none;
+	user-select: none;
+	border-radius: var(--radius-sm);
+	overflow: hidden;
+
+	img {
+		width: 100%;
+		height: auto;
+	}
+}
+
+// The Across and Down sliders: two columns of the same width.
+.focalSliders {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.9rem;
+
+	@media (max-width: 36rem) {
+		grid-template-columns: 1fr;
+	}
+}
+
+.focalDot {
+	position: absolute;
+	width: 1.5rem;
+	height: 1.5rem;
+	transform: translate(-50%, -50%);
+	border: 2px solid #fff;
+	border-radius: 50%;
+	box-shadow: 0 0 0 1px hsla(218, 45%, 14%, 0.6), 0 0.15rem 0.5rem hsla(218, 45%, 14%, 0.4);
+	pointer-events: none;
+}
+
+.defaultPreview {
+	width: min(100%, 20rem);
+	height: auto;
+	border-radius: var(--radius-sm);
+}
+
+.modal {
+	margin: auto;
+	width: min(92vw, 26rem);
+	padding: 1.5rem;
+	color: var(--color-text);
+	background: var(--color-surface);
+	border: 0;
+	border-radius: var(--radius-md);
+	box-shadow: 0 1.25rem 3rem hsla(218, 45%, 14%, 0.35);
+
+	&::backdrop {
+		background: hsla(218, 45%, 14%, 0.5);
+	}
+
+	h2 {
+		margin-bottom: 0.6rem;
+		font-family: var(--font-young-serif), serif;
+		font-size: 1.25rem;
+	}
+
+	p {
+		margin-bottom: 1.25rem;
+		font-size: 0.9rem;
+		color: var(--color-text-dim);
+	}
 }
 
 .ok,

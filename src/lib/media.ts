@@ -8,3 +8,14 @@ export const MEDIA_PUBLIC_ID_PATTERN = /^oskar-saks\/gallery\/(families|couples|
 export function mediaFolder(category: string) {
   return `${MEDIA_FOLDER}/${category}`;
 }
+
+// Site-wide images (the About page photos). Kept apart from the gallery so each has its own folder, pending tag and id pattern.
+export const SITE_IMAGE_KEYS = ["about-portrait", "about-couple"] as const;
+export type SiteImageKey = (typeof SITE_IMAGE_KEYS)[number];
+export const SITE_UPLOAD_TAG = "pending-site-upload";
+export const SITE_FOLDER = "oskar-saks/site";
+export const SITE_PUBLIC_ID_PATTERN = /^oskar-saks\/site\/(about-portrait|about-couple)\/[A-Za-z0-9_-]{2,40}$/;
+
+export function siteFolder(key: SiteImageKey) {
+  return `${SITE_FOLDER}/${key}`;
+}

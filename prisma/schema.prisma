@@ -50,6 +50,9 @@ model SiteImage {
   width              Int
   height             Int
   alt                String
+  // Where the photo is anchored when the site crops it (object-position, 0-100). Null keeps the layout's default crop.
+  focalX             Int?
+  focalY             Int?
 }
 
 // Editable page copy, one row per page ("home", "about", "services"). `data` is validated by src/lib/contentSchema.ts;

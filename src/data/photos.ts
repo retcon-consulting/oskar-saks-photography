@@ -57,6 +57,13 @@ export const HERO_PHOTO = {
 	alt: 'A couple walking arm in arm through falling snow',
 };
 
+export const OSKAR_PHOTO = {
+	src: '/images/oskar.webp',
+	width: 800,
+	height: 800,
+	alt: 'Portrait of photographer Oskar Saks',
+};
+
 export const ABOUT_PHOTO = {
 	src: '/images/about.webp',
 	width: 2500,
