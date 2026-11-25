@@ -26,7 +26,7 @@ export async function getPhotosByCategory(slug: string): Promise<Photo[]> {
   "use cache";
   cacheTag("photos");
   cacheLife("days");
-  const rows = await db.photo.findMany({ where: { category: slug }, orderBy: [{ position: "asc" }, { createdAt: "asc" }, { id: "asc" }] });
+  const rows = await db.photo.findMany({ where: { category: slug }, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
   return rows.map(toPhoto);
 }
 

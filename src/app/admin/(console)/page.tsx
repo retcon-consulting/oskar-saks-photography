@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 async function getGalleryCategories() {
 	const [photos, categories] = await Promise.all([
 		db.photo.findMany({
-			orderBy: [{ position: 'asc' }, { createdAt: 'asc' }, { id: 'asc' }],
+			orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
 		}),
 		db.category.findMany({ orderBy: [{ hidden: 'asc' }, { position: 'asc' }, { slug: 'asc' }] }),
 	]);

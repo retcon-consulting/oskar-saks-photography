@@ -377,7 +377,7 @@ function Uploader({ slug }: { slug: string }) {
     <section className={styles.upload}>
       <h2>Add photos</h2>
       <input ref={input} type="file" accept={MEDIA_ACCEPT} multiple onChange={(event) => onChange(event.target.files)} />
-      <p className={styles.hint}>JPG, PNG or WebP, up to 10 MB each. New photos are added to the end; edit the alt text afterwards.</p>
+      <p className={styles.hint}>JPG, PNG or WebP, up to 10 MB each. New photos appear at the top; edit the alt text afterwards.</p>
       {items.length > 0 && (
         <ul className={styles.uploads}>
           {items.map((item, index) => (
