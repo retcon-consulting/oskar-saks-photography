@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useEffect, useId, useRef, useState, useTransition, type ChangeEvent } from "react";
+import { memo, useCallback, useEffect, useId, useRef, useState, useTransition, type ChangeEvent, type ReactNode } from "react";
 import {
   closestCenter,
   DndContext,
@@ -20,6 +20,7 @@ import {
   deletePhotoAction,
   deletePhotosAction,
   movePhotosAction,
+  reorderCategoriesAction,
   reorderPhotosAction,
   signUploadAction,
   updateCategoryAction,
@@ -53,11 +54,48 @@ export default function PhotoManager({ categories }: { categories: AdminCategory
   // Lives here, not in the grid, because the grid remounts when its photos change (e.g. after a delete).
   const [notice, setNotice] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
+  // Tab order is kept locally so a drag feels instant; it resyncs whenever the saved order or the set of galleries changes.
+  const savedOrder = categories.filter((item) => !item.hidden).map((item) => item.slug);
+  const savedKey = savedOrder.join("|");
+  const [order, setOrder] = useState(savedOrder);
+  const [syncedKey, setSyncedKey] = useState(savedKey);
+  if (syncedKey !== savedKey) {
+    setSyncedKey(savedKey);
+    setOrder(savedOrder);
+  }
+  const [, startReorder] = useTransition();
+  const tabSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 220, tolerance: 8 } }),
+  );
+
   const category = categories.find((item) => item.slug === active) ?? categories[0];
   if (!category) return null;
 
-  const galleries = categories.filter((item) => !item.hidden);
+  const galleries = order
+    .map((slug) => categories.find((item) => item.slug === slug))
+    .filter((item): item is AdminCategory => Boolean(item));
   const unassigned = categories.find((item) => item.hidden);
+
+  function onTabDragEnd({ active: dragged, over }: DragEndEvent) {
+    if (!over || dragged.id === over.id) return;
+    const from = order.indexOf(String(dragged.id));
+    const to = order.indexOf(String(over.id));
+    if (from === -1 || to === -1) return;
+
+    const previous = order;
+    const next = arrayMove(order, from, to);
+    setOrder(next);
+    setNotice(null);
+    startReorder(async () => {
+      const result = await reorderCategoriesAction({ ids: next });
+      if (result.ok) setNotice("Gallery order saved. It applies to the site navigation and the home page.");
+      else {
+        setOrder(previous);
+        setNotice(result.error);
+      }
+    });
+  }
 
   const select = (slug: string) => {
     setActive(slug);
@@ -68,18 +106,20 @@ export default function PhotoManager({ categories }: { categories: AdminCategory
   return (
     <div className={styles.manager}>
       <div className={styles.tabs} role="tablist" aria-label="Galleries">
-        {galleries.map((item) => (
-          <button
-            key={item.slug}
-            type="button"
-            role="tab"
-            aria-selected={item.slug === category.slug && !adding}
-            className={item.slug === category.slug && !adding ? styles.tabActive : styles.tab}
-            onClick={() => select(item.slug)}
-          >
-            {item.label} <span>{item.photos.length}</span>
-          </button>
-        ))}
+        <DndContext id="gallery-tabs" sensors={tabSensors} collisionDetection={closestCenter} onDragEnd={onTabDragEnd}>
+          <SortableContext items={order} strategy={rectSortingStrategy}>
+            {galleries.map((item) => (
+              <SortableTab
+                key={item.slug}
+                id={item.slug}
+                active={item.slug === category.slug && !adding}
+                onSelect={() => select(item.slug)}
+              >
+                {item.label} <span>{item.photos.length}</span>
+              </SortableTab>
+            ))}
+          </SortableContext>
+        </DndContext>
         <button
           type="button"
           className={`${styles.tab} ${styles.tabAdd}`}
@@ -137,7 +177,7 @@ export default function PhotoManager({ categories }: { categories: AdminCategory
           />
           <Uploader key={`up-${category.slug}`} slug={category.slug} />
           <p className={styles.hint}>
-            <strong>Drag a photo by its image</strong> to reorder; the others shift to make room. The gallery shows photos in
+            <strong>Drag a gallery tab</strong> above to change the order galleries appear on the site. <strong>Drag a photo by its image</strong> to reorder; the others shift to make room. The gallery shows photos in
             three columns at their natural shape, uncropped, placing each one in the shortest column, so the order reads
             left to right. The <strong>cover</strong> is the photo shown on the gallery cards. Tick the box on a photo to select
             several (shift-click selects a range), then move or delete them together.
@@ -377,7 +417,7 @@ function Uploader({ slug }: { slug: string }) {
     <section className={styles.upload}>
       <h2>Add photos</h2>
       <input ref={input} type="file" accept={MEDIA_ACCEPT} multiple onChange={(event) => onChange(event.target.files)} />
-      <p className={styles.hint}>JPG, PNG or WebP, up to 10 MB each. New photos appear at the top; edit the alt text afterwards.</p>
+      <p className={styles.hint}>JPG, PNG or WebP, up to 10 MB each. New photos are added to the front; edit the alt text afterwards.</p>
       {items.length > 0 && (
         <ul className={styles.uploads}>
           {items.map((item, index) => (
@@ -578,6 +618,25 @@ function SortableGrid({ slug, photos, moveTargets, onNotice }: SortableGridProps
         onConfirm={confirmBulkDelete}
       />
     </>
+  );
+}
+
+// A gallery pill that selects on click and reorders on drag (the drag only starts after a few pixels of movement).
+function SortableTab({ id, active, onSelect, children }: { id: string; active: boolean; onSelect: () => void; children: ReactNode }) {
+  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
+  return (
+    <button
+      ref={setNodeRef}
+      type="button"
+      role="tab"
+      aria-selected={active}
+      className={active ? styles.tabActive : styles.tab}
+      style={{ transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.7 : undefined, touchAction: "manipulation" }}
+      onClick={onSelect}
+      {...listeners}
+    >
+      {children}
+    </button>
   );
 }
 

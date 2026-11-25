@@ -58,7 +58,7 @@ export async function addPhotoAction(input: { category: string; publicId: string
     return { ok: false, error: "Photos must be 10 MB or smaller" };
   }
 
-  const last = await db.photo.aggregate({ where: { category: gallery.slug }, _max: { position: true }, _count: true });
+  const first = await db.photo.aggregate({ where: { category: gallery.slug }, _min: { position: true }, _count: true });
   await db.photo.create({
     data: {
       id: `p${randomBytes(6).toString("hex")}`,
@@ -68,8 +68,8 @@ export async function addPhotoAction(input: { category: string; publicId: string
       height: image.height,
       alt: alt.data,
       category: gallery.slug,
-      cover: last._count === 0,
-      position: (last._max.position ?? -1) + 1,
+      cover: first._count === 0,
+      position: (first._min.position ?? 1) - 1,
     },
   });
   await markImagesAttached([publicId]).catch((error) => console.error("Failed to tag upload:", error));
@@ -294,5 +294,23 @@ export async function reorderPhotosAction(input: { category: string; ids: string
     input.ids.map((id, position) => db.photo.update({ where: { id }, data: { position } })),
   );
   updateTag("photos");
+  return { ok: true };
+}
+
+export async function reorderCategoriesAction(input: { ids: string[] }): Promise<ActionResult> {
+  await verifyAdmin();
+  if (!Array.isArray(input.ids)) return { ok: false, error: "Invalid order" };
+
+  const existing = await db.category.findMany({ where: { hidden: false }, select: { slug: true } });
+  const known = new Set(existing.map((category) => category.slug));
+  const unique = new Set(input.ids);
+  if (unique.size !== input.ids.length || unique.size !== known.size || input.ids.some((id) => !known.has(id))) {
+    return { ok: false, error: "The galleries changed. Refresh and try again." };
+  }
+
+  await db.$transaction(
+    input.ids.map((slug, position) => db.category.update({ where: { slug }, data: { position } })),
+  );
+  updateTag("categories");
   return { ok: true };
 }
