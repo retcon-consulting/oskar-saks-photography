@@ -23,7 +23,7 @@
     "cloudinary": "^2.11.0",
     "flatpickr": "^4.6.13",
     "iron-session": "^9.0.1",
-    "next": "16.4.2",
+    "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "resend": "^6.34.1",
@@ -39,7 +39,7 @@
     "@types/react-dom": "^19",
     "@types/ws": "^8.18.2",
     "eslint": "^9",
-    "eslint-config-next": "16.4.2",
+    "eslint-config-next": "16.4.6",
     "prisma": "^7.10.1",
     "tsx": "^4.23.15",
     "typescript": "^5"

@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   cacheComponents: true,
   partialPrefetching: true,
+  experimental: {
+    // Remind coding agents when the installed Next.js version has a published security advisory.
+    agentUpgrade: "security",
+  },
   // The admin sections are tabs on /admin now; keep the old addresses working.
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
